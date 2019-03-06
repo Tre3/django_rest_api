@@ -17,20 +17,29 @@ RUN cd /tmp && \
     sh -c "echo '/usr/local/lib' > /etc/ld.so.conf.d/custom_python3.conf" && \
     ldconfig
 
-# install Django2.1.7 and uwsgi, and run Django
+# install Django2.1.7 and uwsgi, and make Django project
 RUN pip3 install Django==2.1.7 && \
     pip3 install uwsgi==2.0.18 && \
-    cd && \
+    mkdir /var/www && \
+    cd /var/www && \
     django-admin startproject djangotest
 
-COPY settings.py /root/djangotest/djangotest
+WORKDIR /var/www/djangotest
+
+COPY settings.py /var/www/djangotest/djangotest/settings.py
+
+# install nginx-1.14.2 (http://nginx.org/en/linux_packages.html)
 COPY nginx.repo /etc/yum.repos.d/nginx.repo
-
-# install nginx-1.14.2
+COPY uwsgi_params /var/www/djangotest/uwsgi_params
 RUN yum install -y nginx-1.14.2
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY djangotest_nginx.conf /etc/nginx/sites-available/djangotest_nginx.conf
+RUN cp /etc/nginx/sites-available/djangotest_nginx.conf /var/www/djangotest/djangotest_nginx.conf && \
+    mkdir /etc/nginx/sites-enabled && \
+    ln -s /var/www/djangotest/djangotest_nginx.conf /etc/nginx/sites-enabled/ && \
+    python3 manage.py collectstatic
 
-WORKDIR /root/djangotest
-
-CMD python3 manage.py runserver 0.0.0.0:8000
+CMD tail -f /dev/null
+# CMD python3 manage.py runserver 0.0.0.0:8000
 
 MAINTAINER imai.k@isoroot.jp
