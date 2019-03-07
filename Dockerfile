@@ -39,7 +39,10 @@ RUN cp /etc/nginx/sites-available/djangotest_nginx.conf /var/www/djangotest/djan
     ln -s /var/www/djangotest/djangotest_nginx.conf /etc/nginx/sites-enabled/ && \
     python3 manage.py collectstatic
 
-CMD tail -f /dev/null
-# CMD python3 manage.py runserver 0.0.0.0:8000
+COPY djangotest_uwsgi.ini /var/www/djangotest/djangotest_uwsgi.ini
+
+# CMD tail -f /dev/null
+CMD nginx && \
+    uwsgi --ini djangotest_uwsgi.ini
 
 MAINTAINER imai.k@isoroot.jp
